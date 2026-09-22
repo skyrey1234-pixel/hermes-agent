@@ -1,0 +1,24 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD",
+      "description": "Dashboard password for username admin. Replace the generated development password with one you choose using Secrets.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "HERMES_DASHBOARD_BASIC_AUTH_SECRET",
+      "description": "Stable signing secret for dashboard sessions.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "OPENROUTER_API_KEY",
+      "description": "AI chat credential from https://openrouter.ai/keys. Not needed to open the dashboard.",
+      "requiredAtBoot": false
+    }
+  ]
+}

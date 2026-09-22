@@ -170,6 +170,14 @@ is "inside the Hermes desktop app". The pattern:
 Test: if the capability still makes sense with the client on another machine, it is
 session-scoped. Assert the GUI session gets the tool **with the env var absent**.
 
+## Base44 preview environment
+
+- `docker-compose.base44.yml` serves live Vite source on port 3000; the Python API is internal-only. `/api`, `/login`, `/auth`, and plugin assets share the frontend origin.
+- `.base44/start_dashboard.py` preserves the normal public auth gate, initializes username `admin`, and derives `dashboard.public_url` from the runtime preview hostname for WebSocket origin validation. Password and signing secret come only from `/run/base44/app.env`.
+- The node setup service installs selected npm workspaces and builds the embedded TUI; its runtime is shared with Python for PTY child processes. Python source reloads with watchfiles. Hermes state/SQLite lives in the `hermes_data` volume, not the checkout.
+- Verify `/api/status`, `/api/auth/providers`, and `/login` through port 3000. Protected requests must fail before password login and succeed after it. Container-to-Vite probes need `Host: localhost:3000` (the internal service name is not an allowed browser host).
+- OpenRouter is optional at startup; AI responses require a real `OPENROUTER_API_KEY`. Generated dashboard passwords must be replaced in Secrets before users can sign in with a password they know.
+
 ## Development Environment
 
 ```bash

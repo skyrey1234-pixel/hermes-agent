@@ -37,6 +37,8 @@ function hermesDevToken(): Plugin {
     async transformIndexHtml() {
       try {
         const res = await fetch(BACKEND, { headers: { accept: "text/html" } });
+        // Public dashboard binds use cookies and the server-rendered login form.
+        if (new URL(res.url).pathname === "/login") return;
         const html = await res.text();
         const match = html.match(TOKEN_RE);
         if (!match) {
@@ -149,7 +151,10 @@ export default defineConfig({
     },
   },
   server: {
+    watch: { usePolling: true },
     proxy: {
+      "/login": BACKEND,
+      "/auth": BACKEND,
       "/api": {
         target: BACKEND,
         ws: true,
