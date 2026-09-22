@@ -57,6 +57,7 @@ services:
     init: true
     environment:
       HERMES_DASHBOARD_URL: http://api:9119
+      BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX}
       __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: ${__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS}
     volumes:
       - .:/app

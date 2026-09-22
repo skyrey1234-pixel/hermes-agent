@@ -15,6 +15,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 const BACKEND = process.env.HERMES_DASHBOARD_URL ?? "http://127.0.0.1:9119";
+const previewAuth = Boolean(process.env.BASE44_PUBLIC_HOST_SUFFIX);
 
 /**
  * In production the Python `hermes dashboard` server injects a one-shot
@@ -34,7 +35,52 @@ function hermesDevToken(): Plugin {
   return {
     name: "hermes:dev-session-token",
     apply: "serve",
+    configureServer(server) {
+      if (!previewAuth) return;
+      server.middlewares.use(async (req, res, next) => {
+        const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+        if (
+          req.method !== "GET" ||
+          !req.headers.accept?.includes("text/html") ||
+          pathname === "/login" ||
+          pathname.startsWith("/auth/") ||
+          pathname.startsWith("/api/") ||
+          pathname.startsWith("/@") ||
+          pathname.startsWith("/src/") ||
+          pathname.startsWith("/dashboard-plugins/") ||
+          pathname.split("/").pop()?.includes(".")
+        ) {
+          next();
+          return;
+        }
+        try {
+          const auth = await fetch(`${BACKEND}/api/auth/me`, {
+            headers: { cookie: req.headers.cookie ?? "" },
+          });
+          if (auth.status === 401) {
+            res.writeHead(302, {
+              Location: `/login?next=${encodeURIComponent(req.url ?? "/")}`,
+              "Cache-Control": "no-store",
+            });
+            res.end();
+            return;
+          }
+          if (!auth.ok) throw new Error(`HTTP ${auth.status}`);
+          next();
+        } catch {
+          res.writeHead(503, { "Content-Type": "text/plain" });
+          res.end("Dashboard authentication is unavailable. Try again shortly.");
+        }
+      });
+    },
     async transformIndexHtml() {
+      if (previewAuth) {
+        return [{
+          tag: "script",
+          injectTo: "head",
+          children: "window.__HERMES_AUTH_REQUIRED__=true;",
+        }];
+      }
       try {
         const res = await fetch(BACKEND, { headers: { accept: "text/html" } });
         // Public dashboard binds use cookies and the server-rendered login form.
