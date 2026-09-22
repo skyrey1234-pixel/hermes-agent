@@ -5,9 +5,8 @@
   "secrets": [
     {
       "name": "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD",
-      "description": "Dashboard password for username admin. Replace the generated development password with one you choose using Secrets.",
-      "requiredAtBoot": true,
-      "generatedForDevelopment": true
+      "description": "Dashboard password for username admin, configured in Secrets.",
+      "requiredAtBoot": true
     },
     {
       "name": "HERMES_DASHBOARD_BASIC_AUTH_SECRET",
