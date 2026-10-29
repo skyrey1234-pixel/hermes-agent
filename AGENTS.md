@@ -422,3 +422,35 @@ Long-form background lives in `website/docs/developer-guide/` (agent-loop, promp
 context-compression-and-caching, gateway-internals, tools-runtime, plugins/, cron-internals,
 session-storage, ...). Workflow rules (PR/issue/review/salvage process) live in the
 `hermes-agent-dev` skill, not here.
+
+## Base44 sandbox run (docker-compose.base44.yml)
+
+The sandbox stack is separate from the repo's own `docker-compose.yml` (which runs a built
+image). Both app services run from the cloned source:
+
+```bash
+docker compose -f docker-compose.base44.yml up -d --build
+docker compose -f docker-compose.base44.yml logs -f dashboard
+```
+
+- **`web-build`** (one-shot, `node:24-bookworm`): `npm ci --workspace web` + `npm run build
+  --workspace web` → `hermes_cli/web_dist/`. `npm ci` needs the root `package-lock.json`; the
+  `web` workspace alone is enough for the dashboard. It reruns on every `up`, so after editing
+  `web/src/` run `docker compose -f docker-compose.base44.yml up -d` (or
+  `run --rm web-build`) and reload — the dashboard serves the built bundle, not the Vite dev
+  server.
+- **`dashboard`** (`python:3.13-slim`): `uv sync --frozen --no-dev` from `uv.lock` on every
+  start, then `hermes_cli.main dashboard --no-open --host 0.0.0.0 --port 9119 --skip-build`,
+  published as host port 3000. `HERMES_HOME=/data` is a named volume (config.yaml, sessions).
+- **Why the auth env is mandatory:** the preview proxy reaches the container over the network,
+  so the server must bind `0.0.0.0` — and a non-loopback bind *refuses to start* without a
+  registered auth provider (`Refusing to bind dashboard to 0.0.0.0 — the auth gate engages on
+  non-loopback binds …`). The bundled password provider is enabled by
+  `HERMES_DASHBOARD_BASIC_AUTH_USERNAME` (`.env.base44-defaults`, `admin`) plus
+  `HERMES_DASHBOARD_BASIC_AUTH_PASSWORD` / `_SECRET` from the platform env file. There is no
+  unauthenticated public-dashboard option by design; do not work around it.
+- **Verification without the user's password:** `/api/status` is a public endpoint, so
+  `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/status` (expect 200) plus a
+  render check of the `/login` page covers boot. Signed-in screens need the user's session.
+- Python tests (per the Testing rules) need dev + provider extras in a container:
+  `uv sync --frozen --extra dev --extra anthropic && bash scripts/run_tests.sh <files>`.

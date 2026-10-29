@@ -1,0 +1,22 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/api/status",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d --build",
+  "secrets": [
+    {
+      "name": "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD",
+      "description": "Password for the dashboard sign-in page (username defaults to `admin`, set in .env.base44-defaults). A public (non-loopback) bind always requires an auth provider.",
+      "requiredAtBoot": true
+    },
+    {
+      "name": "HERMES_DASHBOARD_BASIC_AUTH_SECRET",
+      "description": "Session-signing secret for dashboard logins (>=16 bytes). Optional: without it each process start mints a random key and sessions do not survive a restart.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "OPENROUTER_API_KEY",
+      "description": "OpenRouter API key used by the agent for model calls.",
+      "requiredAtBoot": false
+    }
+  ]
+}
